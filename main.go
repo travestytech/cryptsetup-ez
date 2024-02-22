@@ -85,9 +85,8 @@ func encrypt(dev string) {
 	}
 	defer device.Free()
 
-	fmt.Print("Enter password: ")
+	fmt.Println("Enter password:")
 	passB, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
 
 	err = device.Format(luks2, cryptsetup.GenericParams{Cipher: "aes", CipherMode: "xts-plain64", VolumeKeySize: 512 / 8})
 	if err != nil {
@@ -118,9 +117,8 @@ func open(dev string, name string) {
 		os.Exit(ELOAD)
 	}
 
-	fmt.Print("Enter password: ")
+	fmt.Println("Enter password:")
 	passB, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
 
 	err = device.ActivateByPassphrase(name, 0, string(passB), 0)
 	if err != nil {
