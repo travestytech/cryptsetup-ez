@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/martinjungblut/go-cryptsetup"
@@ -86,7 +88,11 @@ func encrypt(dev string) {
 	defer device.Free()
 
 	fmt.Println("Enter password:")
-	passB, err := term.ReadPassword(int(os.Stdin.Fd()))
+	passB, err := readPassword()
+	if err != nil && err != io.EOF {
+		fmt.Fprintln(os.Stderr, "Error reading password")
+		os.Exit(EPASS)
+	}
 
 	err = device.Format(luks2, cryptsetup.GenericParams{Cipher: "aes", CipherMode: "xts-plain64", VolumeKeySize: 512 / 8})
 	if err != nil {
@@ -118,11 +124,25 @@ func open(dev string, name string) {
 	}
 
 	fmt.Println("Enter password:")
-	passB, err := term.ReadPassword(int(os.Stdin.Fd()))
+	passB, err := readPassword()
+	if err != nil && err != io.EOF {
+		fmt.Fprintln(os.Stderr, "Error reading password")
+		os.Exit(EPASS)
+	}
 
 	err = device.ActivateByPassphrase(name, 0, string(passB), 0)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error activating device by passphrase", dev)
 		os.Exit(EACTP)
 	}
+}
+
+func readPassword() (passB []byte, err error) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		passB, err = term.ReadPassword(int(os.Stdin.Fd()))
+	} else {
+		r := bufio.NewReader(os.Stdin)
+		passB, _, err = r.ReadLine()
+	}
+	return
 }
